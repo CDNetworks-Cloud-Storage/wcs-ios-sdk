@@ -1,103 +1,90 @@
-- [准备](#开发准备)
-- [工程介绍](#工程介绍)
-- [安装](#安装说明)
-- [初始化](#初始化说明)
-- [使用指南](#使用指南)
-  - [普通上传](#普通上传)
-  - [分片上传](#分片上传)
-- [常见问题](#常见问题)
+## Prerequisites
+- Object Storage is activated.
+- The AccessKey and SecretKey are created
+- iOS V7.0 and later
 
-## 开发准备
-* 账号要求：已开通网宿云存储，并获取上传密钥，上传域名等
-* 系统要求：iOS7及以上
+## Project Introduction
+- [Download SDK ](https://wcsd.chinanetcenter.com/sdk/cnc-ios-sdk-wcs.zip)
+- [Source Code](https://github.com/CDNetworks-Object-Storage/wcs-ios-sdk/tree/master/trunk)
+- [Demo & Examples](https://github.com/CDNetworks-Object-Storage/wcs-ios-sdk/tree/master/tools/TestWCSiOS)
 
-## 工程介绍
-1. [wcs-ios-sdk下载链接](http://wcsd.chinanetcenter.com/sdk/wcs-ios-sdk-2.2.5.zip)
-2. [工程源码](https://github.com/Wangsu-Cloud-Storage/wcs-ios-sdk/tree/master/trunk)
-3. [demo&例子](https://github.com/Wangsu-Cloud-Storage/wcs-ios-sdk/tree/master/tools/TestWCSiOS)
+## Install
+### Environment preparation of mobile development
 
-## 安装说明
-一、移动端开发环境准备
-1)工程的发布SDK设置为iOS7或iOS7以上
-2)将WCSiOS.framework添加到工程环境下，并确认WCSiOS.framework已经被添加到工程所使用的Target下的 Build Phases -> Link Binary With Libraries下
-3)SDK依赖的系统库如下，请确保将以下系统库添加到Link Binary With Libraries下
-
-```objective-c
+1. Set the SDK version as iOS7 or above iOS7
+2. Add ***WCSiOS.framework*** to the project environment, and confirm that ***WCSiOS.framework*** has been addded to *Build Phases -> Link Binary With Libraries*
+3. SDK is depended on the below system libraryS, please make sure that add below lib to *Link Binary With Libraries*
+```
 MobileCoreServices.framework
 libz.dylib(libz.tbd for Xcode7+)
 ```
 
-4)工程编译环境
-SDK的framework包含Category，所以需要添加-ObjC选项，否则在使用过程中会出现selector无法识别的异常，如：
--[__NSCFDictionary safeStringForKey:]: unrecognized selector sent to instance 0x7f8c51d3c260
-![添加-objc](https://wcs.chinanetcenter.com/indexNew/image/wcs/wcs-ios-sdk2.png)
+4. The *framework* in SDK includes *Category*, so it need to add *-ObjC*, or there may comes abnormity that selector can't be recognized during the using.
+e.g.
+-[__NSCFDictionary safeStringForKey:]: unrecognized selector sent to instance 0x7f8c51d3c260 
+![image.png](https://www.wangsu.com/wos/draft/help_doc/en_us/2514/3476/1601197052625_image.png)
 
-二、服务端开发环境准备
-服务端开发环境请参考wcs-Java-SDK: https://github.com/Wangsu-Cloud-Storage/wcs-java-sdk
+### Development environment preparation in server end
+For server end development environment please refer to [wcs-Java-SDK](https://github.com/CDNetworks-Object-Storage/wcs-java-sdk)
 
-
-## 初始化说明
-* 用户接入网宿云存储时，需要使用一对有效的AK和SK进行签名认证。为保证ak，sk的安全性，推荐客户通过自己的服务端下发鉴权凭证。
-* 配置上传域名&超时时间
+## Initialization
+- A valid pair of AK and SK is required to authenticate the user's signature when accessing Object Storage. In order to ensure the security of AK and SK, it is recommended that customers deliver authentication credentials through their own servers.
+- Configure upload domain & time out
 ```
 self.client = [[WCSClient alloc] initWithBaseURL:[NSURL URLWithString:@"http://yourUploadDomain.com"] andTimeout:30];
+
 ```
+## How to use it
+### Normal Upload
+- Returnurl can be turned on for page jumping when using the sheet upload. Otherwise, it is recommended not to set Returnurl.
+- If the file size is more than 20M, it is recommended to use multipart upload
+- The upload domain provided by Object Storage is a normal domain. If you are sensitive to the upload speed, we suggest you to use our CDN for the upload acceleration.
 
-## 使用指南
-
-### 普通上传
-* 表单上传时可开启returnurl进行页面跳转，其他情况下建议不设置returnurl。
-* 若文件大小超过20M，建议使用分片上传
-* 云存储提供的上传域名为普通域名，若对上传速度较为敏感，有要求的客户建议采用网宿上传加速服务。
-
-1. 普通上传
-**范例：**
-
-```objective-c
+#### Example of normal upload
+```
 - (void)normalUpload {
   WCSUploadObjectRequest *request = [[WCSUploadObjectRequest alloc] init];
-  request.token = @"上传的token，由服务端提供";
-  request.fileName = @"上传的文件名";
-  request.key = @"上传到云端的文件名，不填云端则以fileName命名";
-  request.fileData = fileData; // 要上传的文件
-  request.mimeType = @"文件contentType"; // 无特殊需求可不配置，由系统匹配content-type
+  request.token = @"token of uploading, provided by server end";
+  request.fileName = @"File name";
+  request.key = @"the file name in Object storage, if remain it empty, it will follow as fileName";
+  request.fileData = fileData; // The file need to be uploaded 
   request.uploadProgress = ^(int64_t bytesSent, int64_t totalBytesSent, int64_t totalBytesExpectedToSend) {
     NSLog(@"%lld bytes sent, %lld total bytes sent, %lld total byte exptected", bytesSent, totalBytesSent, totalBytesExpectedToSend);
   };
-  // 建议复用WCSClient
+  
   WCSClient *client = [[WCSClient alloc] initWithBaseURL:nil andTimeout:30];
   
-  // 注：如使用callback回调上传，需要使用uploadRequestRaw方法，避免多一次不必要的base64解析导致异常
+  // Notes: If you are using callback upload, you need to use uploadRequestRaw, which will avoid unnecessary abnormity in base64 resolve
   [[client uploadRequest:request] continueWithBlock:^id _Nullable(WCSTask<WCSUploadObjectResult *> * _Nonnull task) {
     if (task.error) {
       NSLog(@"The request failed. error: [%@]", task.error);
 } else {
-  // 请求成功，以下为服务端返回的内容
+  // Request successfully, the content returned by server are as belows
       NSDictionary *responseResult = task.result.results;
     }
     return nil;
   }];
 }
+
 ```
+#### Cancel the request of uploading
 
-2.取消正在上传的请求
-**范例：**
-
-```objective-c
+Example
+```
 - (void)normalUploadCancelled {
   WCSUploadObjectRequest *request = [[WCSUploadObjectRequest alloc] init];
-  request.token = @"上传的token，由服务端提供";
-  request.fileName = @"上传的文件名";
-  request.key = @"上传到云端的文件名，不填云端则以fileName命名";
-  request.fileData = fileData; // 要上传的文件
+  request.token = @"Token for upload, provided by server end";
+  request.fileName = @"File name";
+  request.key = @"the file name in object storage, if remain it empty, it will follow as fileName";
+  request.fileData = fileData; // The file need to be uploaded 
   request.uploadProgress = ^(int64_t bytesSent, int64_t totalBytesSent, int64_t totalBytesExpectedToSend) {
     NSLog(@"%lld bytes sent, %lld total bytes sent, %lld total byte exptected", bytesSent, totalBytesSent, totalBytesExpectedToSend);
   };
-  // 建议复用WCSClient
+
   WCSClient *client = [[WCSClient alloc] initWithBaseURL:nil andTimeout:30];
   [[client uploadRequest:request] continueWithBlock:^id _Nullable(WCSTask<WCSUploadObjectResult *> * _Nonnull task) {
     if (task.error) {
-      // 请求被取消。
+      // Request is cancelled 
       if (task.error.code == NSURLErrorCancelled) {
         NSLog(@"request cancelled.");
       } else {
@@ -112,85 +99,81 @@ return nil;
     [uploadRequest cancel];
   });
 }
+
 ```
 
-3.自定义变量上传(POST方式)
+#### Upload by customized variables (POST)
 
-**范例：**
-
-```objective-c
+Examples
+```
 - (void)normalUpload {
   WCSUploadObjectRequest *request = [[WCSUploadObjectRequest alloc] init];
-  request.token = @"上传的token，由服务端提供";
-  // 自定义变量，自定义变量会在上传成功后返回给客户端。
-  // 更多关于自定义变量请参考：
-  // https://wcs.chinanetcenter.com/document/API/Terminology#自定义替换变量
+  request.token = @"token of uploading, provided by server end";
+  // Customized variables, which will be returned to client end after successful upload
   request.customParams = @{@"x:test" : @"customParams"};
-  request.fileName = @"上传的文件名";
-  request.key = @"上传到云端的文件名，不填云端则以fileName命名";
-  request.fileData = fileData; // 要上传的文件
+  request.fileName = @"File name";
+  request.key = @"the file name in object storage, if remain it empty, it will follow as fileName";
+  request.fileData = fileData; // The file need to be uploaded 
   request.uploadProgress = ^(int64_t bytesSent, int64_t totalBytesSent, int64_t totalBytesExpectedToSend) {
     NSLog(@"%lld bytes sent, %lld total bytes sent, %lld total byte exptected", bytesSent, totalBytesSent, totalBytesExpectedToSend);
   };
-  // 建议复用WCSClient
+  // it is recommended to use WCSClient
   WCSClient *client = [[WCSClient alloc] initWithBaseURL:nil andTimeout:30];
   
-  // 注：如使用callback回调上传，需要使用uploadRequestRaw方法，避免多一次不必要的base64解析导致异常
+  // Notes: If you are using callback upload, you need to use uploadRequestRaw, which will avoid unnecessary abnormity in base64 resolve
   [[client uploadRequest:request] continueWithBlock:^id _Nullable(WCSTask<WCSUploadObjectResult *> * _Nonnull task) {
     if (task.error) {
       NSLog(@"The request failed. error: [%@]", task.error);
 } else {
-  // 请求成功，以下为服务端返回的内容
+  // Request successfully, the content returned by server are as belows
       NSDictionary *responseResult = task.result.results;
     }
     return nil;
   }];
 }
+
 ```
 
-### 分片上传
-* 移动端上传大文件需要耗费较长时间，一旦在传输过程中出现异常，文件内容需全部重传，影响用户体验，为避免这个问题，引进分片上传机制。
-* 分片上传机制是将一个大文件切分成多个自定义大小的块，然后将这些块并行上传，一旦某个块上传失败，客户端只需要重新上传这个块即可。
-*注意：每个块的最大大小不能超过100M，最小不能小于4M。*
 
-**范例**
+### Multipart Upload 
 
-```objective-c
+Normally, it takes a long time to upload large files on the mobile end. Once abnormalities occur in the transmission process, all files need to be retransmitted, which will affect the user experience. To avoid this problem, multipart upload mechanism is introduced.
+Multipart upload slice a large file into many custom sized blocks, and then upload these blocks in parallel. Once a block upload fails, the client just needs to re-upload the block. 
+Note: The maximum size of each block should not exceed 100M and the minimum size should not be less than 4M.
+
+Example
+```
 - (void)chunkedUpload {
   WCSBlockUploadRequest *blockRequest = [[WCSBlockUploadRequest alloc] init];
-  blockRequest.fileKey = @"上传到云端的文件名，不填则以原文件名命名";
-  blockRequest.fileURL = fileURL; // 文件的URL
-  blockRequest.token = @"上传的token，由服务端提供";
-  blockRequest.mimeType = @"文件contentType"; // 无特殊需求可不配置，由系统匹配content-type
-  blockRequest.chunkSize = 256 * 1024; // 注意：片的大小必须是64K的倍数，最大不能超过块的大小。
-  blockRequest.blockSize = 4 * 1024 * 1024; // 注意：块的大小必须是4M的倍数，最大不能超过100M
+  blockRequest.fileKey = @"the file name in object storage, if remain it empty, it will follow as fileName";
+  blockRequest.fileURL = fileURL; // URL of this file
+  blockRequest.token = @"token of uploading, provided by server end";
+  blockRequest.chunkSize = 256 * 1024; // Note: the chunk size must be multiple of 64K, and the max size can't exceed the block size
+  blockRequest.blockSize = 4 * 1024 * 1024; // Note: the bock size must be multiple of 4M, and the max size can't exceed 100M
   [blockRequest setUploadProgress:^(int64_t bytesSent, int64_t totalBytesSent, int64_t totalBytesExpectedToSend) {
     NSLog(@"%@ %@", @(totalBytesSent), @(totalBytesExpectedToSend));
   }];
-  // 建议复用WCSClient
+  // it is recommended to use WCSClient
   WCSClient *client = [[WCSClient alloc] initWithBaseURL:nil andTimeout:30];
   
-  // 注：如使用callback回调上传，需要使用blockUploadRequestRaw方法，避免多一次不必要的base64解析导致异常
+  // Notes: If you are using callback upload, you need to use blockUploadRequestRaw, which will avoid unnecessary abnormity in base64 resolve
   [[client blockUploadRequest:blockRequest] continueWithBlock:^id _Nullable(WCSTask<WCSBlockUploadResult *> * _Nonnull task) {
     if (task.error) {
       NSLog(@"error %@", task.error.localizedDescription);
 } else {
-  // 上传成功，打印返回的参数。
+  // Request successfully, the content returned by server are as belows
       NSLog(@"results %@", task.result.results);
     }
     return nil;
   }];
+
 ```
 
-### 常见问题
-1）方法无法被识别，如：-[__NSCFDictionary safeStringForKey:]: unrecognized selector sent to instance 0x7f8c51d3c260。
-请确认已在Other Linker Flags添加-ObjC
-
-2）链接_crc32异常
-请添加libz.tbd到工程中
-
-3）链接_UTTypeCopyPreferredTagWithClass异常
-请添加MobileCoreServices.framework到工程中
-
-4）nslog信息本地保存
-请参照demo的 AppDelegate.m 里面 [self redirectNSLogToDocumentFolder];
+## Commond Questions
+1. Method cannot be recognized, e.g. -[__NSCFDictionary safeStringForKey:]: unrecognized selector sent to instance 0x7f8c51d3c260. 
+Please make sure you have already add -ObjC in Other Linker Flags.
+2. Link _crc32 abnormal. 
+Please add libz.tbd to project.
+3. Link _UTTypeCopyPreferredTagWithClass is abnormal.
+Please add MobileCoreServices.framework to project.
+4. Save nslog info to local. Please refer to demo, [self redirectNSLogToDocumentFolder] of AppDelegate.m.
