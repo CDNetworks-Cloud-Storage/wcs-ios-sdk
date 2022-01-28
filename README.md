@@ -1,44 +1,42 @@
 ## Prerequisites
 - Object Storage is activated.
 - The AccessKey and SecretKey are created
-- iOS V7.0 and later
+- iOS V7.0 or above
 
 ## Project Introduction
 - [Download SDK ](https://wcsd.chinanetcenter.com/sdk/cnc-ios-sdk-wcs.zip)
-- [Source Code](https://github.com/CDNetworks-Object-Storage/wcs-ios-sdk/tree/master/trunk)
 - [Demo & Examples](https://github.com/CDNetworks-Object-Storage/wcs-ios-sdk/tree/master/tools/TestWCSiOS)
 
 ## Install
-### Environment preparation of mobile development
+### Preparations for mobile end
 
-1. Set the SDK version as iOS7 or above iOS7
-2. Add ***WCSiOS.framework*** to the project environment, and confirm that ***WCSiOS.framework*** has been addded to *Build Phases -> Link Binary With Libraries*
-3. SDK is depended on the below system libraryS, please make sure that add below lib to *Link Binary With Libraries*
+1. Set the SDK version as iOS7 or above.
+2. Add **WCSiOS.framework** to the project environment, and make sure that **WCSiOS.framework** has been addded to *Build Phases -> Link Binary With Libraries*
+3. SDK has a dependency on below system libs, please add below libs to **Link Binary With Libraries**
 ```
 MobileCoreServices.framework
 libz.dylib(libz.tbd for Xcode7+)
 ```
-
-4. The *framework* in SDK includes *Category*, so it need to add *-ObjC*, or there may comes abnormity that selector can't be recognized during the using.
+4. **Category** is inclueded in SDK framework, so you have to choose `-ObjC` option, or the selector may cannot be recognized when using SDK.
 e.g.
 -[__NSCFDictionary safeStringForKey:]: unrecognized selector sent to instance 0x7f8c51d3c260 
-![image.png](https://www.wangsu.com/wos/draft/help_doc/en_us/2514/3476/1601197052625_image.png)
+![image](https://user-images.githubusercontent.com/98135632/151472425-cb0d9b5f-ad78-4d43-af31-89786abc24db.png)
 
-### Development environment preparation in server end
-For server end development environment please refer to [wcs-Java-SDK](https://github.com/CDNetworks-Object-Storage/wcs-java-sdk)
+### Preparations for server end
+For server end, please refer to [wcs-Java-SDK](https://github.com/CDNetworks-Object-Storage/wcs-java-sdk)
 
 ## Initialization
-- A valid pair of AK and SK is required to authenticate the user's signature when accessing Object Storage. In order to ensure the security of AK and SK, it is recommended that customers deliver authentication credentials through their own servers.
+- AK/SK is required to authenticate the user's signature when accessing Object Storage. With regard to security of AK and SK, it is recommended to build your own server to provide authentication credentials.
 - Configure upload domain & time out
 ```
 self.client = [[WCSClient alloc] initWithBaseURL:[NSURL URLWithString:@"http://yourUploadDomain.com"] andTimeout:30];
 
 ```
-## How to use it
+## How to use
 ### Normal Upload
-- Returnurl can be turned on for page jumping when using the sheet upload. Otherwise, it is recommended not to set Returnurl.
-- If the file size is more than 20M, it is recommended to use multipart upload
-- The upload domain provided by Object Storage is a normal domain. If you are sensitive to the upload speed, we suggest you to use our CDN for the upload acceleration.
+- It is recommeded to set returnurl only when using sheet upload.
+- Multipart upload are recommended when file to upload is larger than 20MB.
+- Object Storage provides a normal domain for you. If you are sensitive to the upload speed, we suggest you to use our CDN for the upload acceleration.
 
 #### Example of normal upload
 ```
@@ -47,7 +45,7 @@ self.client = [[WCSClient alloc] initWithBaseURL:[NSURL URLWithString:@"http://y
   request.token = @"token of uploading, provided by server end";
   request.fileName = @"File name";
   request.key = @"the file name in Object storage, if remain it empty, it will follow as fileName";
-  request.fileData = fileData; // The file need to be uploaded 
+  request.fileData = fileData; // The file to be uploaded 
   request.uploadProgress = ^(int64_t bytesSent, int64_t totalBytesSent, int64_t totalBytesExpectedToSend) {
     NSLog(@"%lld bytes sent, %lld total bytes sent, %lld total byte exptected", bytesSent, totalBytesSent, totalBytesExpectedToSend);
   };
@@ -67,7 +65,7 @@ self.client = [[WCSClient alloc] initWithBaseURL:[NSURL URLWithString:@"http://y
 }
 
 ```
-#### Cancel the request of uploading
+#### Cancel the request of upload
 
 Example
 ```
@@ -137,9 +135,9 @@ Examples
 
 ### Multipart Upload 
 
-Normally, it takes a long time to upload large files on the mobile end. Once abnormalities occur in the transmission process, all files need to be retransmitted, which will affect the user experience. To avoid this problem, multipart upload mechanism is introduced.
-Multipart upload slice a large file into many custom sized blocks, and then upload these blocks in parallel. Once a block upload fails, the client just needs to re-upload the block. 
-Note: The maximum size of each block should not exceed 100M and the minimum size should not be less than 4M.
+- Normally, it takes a long time to upload large files on the mobile end. And all files need to be retransmitted f an error occurs. To avoid this problem, multipart upload mechanism is introduced.
+- Multipart upload slices a large file into many small-size blocks, which will be uploaded in parallel. Once a block upload fails, the client just needs to re-upload the upload-fail block. 
+Note: Block size should not exceed 100MB and be less than 4MB.
 
 Example
 ```
@@ -169,11 +167,11 @@ Example
 
 ```
 
-## Commond Questions
-1. Method cannot be recognized, e.g. -[__NSCFDictionary safeStringForKey:]: unrecognized selector sent to instance 0x7f8c51d3c260. 
-Please make sure you have already add -ObjC in Other Linker Flags.
+## Commond Issues
+1. Unrecognized method, e.g. `-[__NSCFDictionary safeStringForKey:]: unrecognized selector sent to instance 0x7f8c51d3c260`. 
+- Please make sure you have already add `-ObjC` in Other Linker Flags.
 2. Link _crc32 abnormal. 
 Please add libz.tbd to project.
 3. Link _UTTypeCopyPreferredTagWithClass is abnormal.
 Please add MobileCoreServices.framework to project.
-4. Save nslog info to local. Please refer to demo, [self redirectNSLogToDocumentFolder] of AppDelegate.m.
+4. To save **nslog** in local， please refer to ` [self redirectNSLogToDocumentFolder] of AppDelegate.m` in the demo, .
